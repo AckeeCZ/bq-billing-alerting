@@ -67,7 +67,12 @@ def main(_):
     MAX (sku_cost) OVER (windows_sku_description) AS max_sku_cost,
     MIN (sku_cost) OVER (windows_sku_description) AS min_sku_cost,
     FROM (
-        SELECT sku.description AS sku_description, SUM (cost) OVER (PARTITION BY sku.id, _PARTITIONTIME) AS sku_cost 
+        SELECT sku.description AS sku_description, (SUM (cost) OVER (PARTITION BY sku.id, _PARTITIONTIME) + SUM(IFNULL((
+        SELECT
+          SUM(c.amount)
+        FROM
+          UNNEST(credits) c),
+        0)) OVER (PARTITION BY sku.id, _PARTITIONTIME))  AS sku_cost
         FROM `{TABLE_WITH_BILLING}`
         WHERE DATE(_PARTITIONTIME) = "{day_before_yesterday}" AND project.id = "{GCP_PROJECT_ID}"
     )
