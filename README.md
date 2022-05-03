@@ -63,19 +63,21 @@ No modules.
 
 ## Inputs
 
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| <a name="input_gcp_project_id"></a> [gcp\_project\_id](#input\_gcp\_project\_id) | GCP project ID of monitored project | `any` | n/a | yes |
-| <a name="input_opsgenie_endpoint"></a> [opsgenie\_endpoint](#input\_opsgenie\_endpoint) | OpsGenie URL API endpoint | `string` | `"https://api.eu.opsgenie.com/v2/alerts"` | no |
-| <a name="input_opsgenie_token"></a> [opsgenie\_token](#input\_opsgenie\_token) | OpsGenie API token | `string` | `""` | no |
-| <a name="input_project"></a> [project](#input\_project) | n/a | `any` | n/a | yes |
-| <a name="input_region"></a> [region](#input\_region) | n/a | `string` | `"europe-west3"` | no |
-| <a name="input_sa_file_content"></a> [sa\_file\_content](#input\_sa\_file\_content) | Due to constraints, functions currently loads SA key from give file, pass json SA key | `string` | `""` | no |
-| <a name="input_schedule"></a> [schedule](#input\_schedule) | Cron line for cloud function to be executed at | `string` | `"0 8 * * *"` | no |
-| <a name="input_slack_hook"></a> [slack\_hook](#input\_slack\_hook) | Slack channel where to whine about the billing issues | `any` | n/a | yes |
-| <a name="input_table_with_billing"></a> [table\_with\_billing](#input\_table\_with\_billing) | Full table name used in SQL query | `any` | n/a | yes |
-| <a name="input_threshold"></a> [threshold](#input\_threshold) | Given threshold for sku cost, let's say you are interested only in costs above 2 dollars, therefore threshold should be 2 | `string` | `"2.5"` | no |
-| <a name="input_time_zone"></a> [time\_zone](#input\_time\_zone) | Time zone for cron evaluation | `string` | `"Europe/Prague"` | no |
+| Name                                                                                                     | Description                                                                                                               | Type     | Default                                   | Required |
+|----------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|----------|-------------------------------------------|:--------:|
+| <a name="input_gcp_project_id"></a> [gcp\_project\_id](#input\_gcp\_project\_id)                         | GCP project ID of monitored project                                                                                       | `any`    | n/a                                       |   yes    |
+| <a name="input_opsgenie_endpoint"></a> [opsgenie\_endpoint](#input\_opsgenie\_endpoint)                  | OpsGenie URL API endpoint                                                                                                 | `string` | `"https://api.eu.opsgenie.com/v2/alerts"` |    no    |
+| <a name="input_opsgenie_token"></a> [opsgenie\_token](#input\_opsgenie\_token)                           | OpsGenie API token                                                                                                        | `string` | `""`                                      |    no    |
+| <a name="input_project"></a> [project](#input\_project)                                                  | n/a                                                                                                                       | `any`    | n/a                                       |   yes    |
+| <a name="input_region"></a> [region](#input\_region)                                                     | n/a                                                                                                                       | `string` | `"europe-west3"`                          |    no    |
+| <a name="input_sa_file_content"></a> [sa\_file\_content](#input\_sa\_file\_content)                      | Due to constraints, functions currently loads SA key from give file, pass json SA key                                     | `string` | `""`                                      |    no    |
+| <a name="input_schedule"></a> [schedule](#input\_schedule)                                               | Cron line for cloud function to be executed at                                                                            | `string` | `"0 8 * * *"`                             |    no    |
+| <a name="input_slack_hook"></a> [slack\_hook](#input\_slack\_hook)                                       | Slack channel where to whine about the billing issues                                                                     | `any`    | n/a                                       |   yes    |
+| <a name="input_table_with_billing"></a> [table\_with\_billing](#input\_table\_with\_billing)             | Full table name used in SQL query                                                                                         | `any`    | n/a                                       |   yes    |
+| <a name="input_threshold"></a> [threshold](#input\_threshold)                                            | Given threshold for sku cost, let's say you are interested only in costs above 2 dollars, therefore threshold should be 2 | `string` | `"2.5"`                                   |    no    |
+| <a name="input_second_alert_threshold"></a> [second\_alert\_threshold](#input\_second\_alert\_threshold) | If there is any sku cost over this threshold, second alert will be sent.                                                  | `string` | `"30"`                                    |    no    |
+| <a name="input_time_zone"></a> [time\_zone](#input\_time\_zone)                                          | Time zone for cron evaluation                                                                                             | `string` | `"Europe/Prague"`                         |    no    |
+| <a name="input_minimum_cost"></a> [minimum\_cost](#input\_minimum\_cost)                                 | Minimum amount of SKU cost per day to be included in average calculation                                                  | `string` | `"0.5"`                                   |    no    |
 
 ## Outputs
 
