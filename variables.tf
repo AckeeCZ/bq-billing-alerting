@@ -12,6 +12,17 @@ variable "threshold" {
   description = "Given threshold for sku cost, let's say you are interested only in costs above 2 dollars, therefore threshold should be 2"
   default     = "2.5"
 }
+
+variable "second_alert_threshold" {
+  description = "If there is any sku cost over this threshold, second alert will be sent."
+  default     = "30"
+}
+
+variable "minimum_cost" {
+  description = "Minimum amount of SKU cost per day to be included in average calculation"
+  default     = "0.5"
+}
+
 variable "slack_hook" {
   description = "Slack channel where to whine about the billing issues"
 }

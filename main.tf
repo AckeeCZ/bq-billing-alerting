@@ -54,12 +54,14 @@ resource "google_cloudfunctions_function" "function" {
   ingress_settings      = "ALLOW_ALL"
 
   environment_variables = {
-    GCP_PROJECT_ID     = var.gcp_project_id
-    TABLE_WITH_BILLING = var.table_with_billing
-    THRESHOLD          = var.threshold
-    SLACK_HOOK         = var.slack_hook
-    OPSGENIE_TOKEN     = var.opsgenie_token
-    OPSGENIE_ENDPOINT  = var.opsgenie_endpoint
+    GCP_PROJECT_ID         = var.gcp_project_id
+    TABLE_WITH_BILLING     = var.table_with_billing
+    THRESHOLD              = var.threshold
+    SECOND_ALERT_THRESHOLD = var.second_alert_threshold
+    SLACK_HOOK             = var.slack_hook
+    OPSGENIE_TOKEN         = var.opsgenie_token
+    OPSGENIE_ENDPOINT      = var.opsgenie_endpoint
+    MINIMUM_COST           = var.minimum_cost
   }
 }
 
