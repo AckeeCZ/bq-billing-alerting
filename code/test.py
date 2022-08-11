@@ -7,7 +7,11 @@ from itertools import chain
 from google.cloud import bigquery
 from google.oauth2 import service_account
 from datetime import datetime, timedelta
+from breakout import breakout
 import os
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 LOG_LEVEL = os.environ.get('LOG_LEVEL', "INFO")
 logging.basicConfig(level=LOG_LEVEL)
@@ -34,37 +38,47 @@ def main(_):
     client = bigquery.Client(credentials=credentials, project=credentials.project_id,)
 
     datetime_now = datetime.now()
-    day_before_yesterday = (datetime_now - timedelta(days=2)).strftime("%Y-%m-%d")
-    yesterday = (datetime_now - timedelta(days=1)).strftime("%Y-%m-%d")
     three_days_before_yesterday = (datetime_now - timedelta(days=3)).strftime("%Y-%m-%d")
     past_two_weeks = (datetime_now - timedelta(days=17)).strftime("%Y-%m-%d")
 
+    # query_past_data = """
+    # SELECT DISTINCT sku_description,
+    # VAR_SAMP (sku_cost) OVER (windows_sku_description) AS var_sku_cost,
+    # AVG (sku_cost) OVER (windows_sku_description) AS avg_sku_cost,
+    # MAX (sku_cost) OVER (windows_sku_description) AS max_sku_cost,
+    # MIN (sku_cost) OVER (windows_sku_description) AS min_sku_cost,
+    # VAR_SAMP (sku_cost_with_credits) OVER (windows_sku_description) AS var_sku_cost_with_credits,
+    # AVG (sku_cost_with_credits) OVER (windows_sku_description) AS avg_sku_cost_with_credits,
+    # MAX (sku_cost_with_credits) OVER (windows_sku_description) AS max_sku_cost_with_credits,
+    # MIN (sku_cost_with_credits) OVER (windows_sku_description) AS min_sku_cost_with_credits,
+    # FROM (
+    #     SELECT sku.description AS sku_description, SUM (cost) OVER (PARTITION BY sku.id, _PARTITIONTIME) AS sku_cost,
+    #     (SUM (cost) OVER (PARTITION BY sku.id, _PARTITIONTIME) + SUM(IFNULL((
+    #           SELECT
+    #             SUM(c.amount)
+    #           FROM
+    #             UNNEST(credits) c),
+    #           0)) OVER (PARTITION BY sku.id, _PARTITIONTIME)) AS sku_cost_with_credits
+    #     FROM `{TABLE_WITH_BILLING}`
+    #     WHERE DATE(_PARTITIONTIME) > "{past_two_weeks}" AND DATE(_PARTITIONTIME) < "{three_days_before_yesterday}" AND project.id = "{GCP_PROJECT_ID}"
+    # )
+    # WHERE (sku_cost > {MINIMUM_COST}) # Filter out values which we know are surely bellow average
+    # WINDOW windows_sku_description AS (
+    #     PARTITION BY sku_description
+    # )
+    # ORDER BY avg_sku_cost DESC
+    # """.format(
+    #     three_days_before_yesterday=three_days_before_yesterday,
+    #     past_two_weeks=past_two_weeks,
+    #     GCP_PROJECT_ID=GCP_PROJECT_ID,
+    #     TABLE_WITH_BILLING=TABLE_WITH_BILLING,
+    #     MINIMUM_COST=MINIMUM_COST
+    # )
+
     query_past_data = """
-    SELECT DISTINCT sku_description,
-    VAR_SAMP (sku_cost) OVER (windows_sku_description) AS var_sku_cost,
-    AVG (sku_cost) OVER (windows_sku_description) AS avg_sku_cost,
-    MAX (sku_cost) OVER (windows_sku_description) AS max_sku_cost,
-    MIN (sku_cost) OVER (windows_sku_description) AS min_sku_cost,
-    VAR_SAMP (sku_cost_with_credits) OVER (windows_sku_description) AS var_sku_cost_with_credits,
-    AVG (sku_cost_with_credits) OVER (windows_sku_description) AS avg_sku_cost_with_credits,
-    MAX (sku_cost_with_credits) OVER (windows_sku_description) AS max_sku_cost_with_credits,
-    MIN (sku_cost_with_credits) OVER (windows_sku_description) AS min_sku_cost_with_credits,
-    FROM (
-        SELECT sku.description AS sku_description, SUM (cost) OVER (PARTITION BY sku.id, _PARTITIONTIME) AS sku_cost,
-        (SUM (cost) OVER (PARTITION BY sku.id, _PARTITIONTIME) + SUM(IFNULL((
-              SELECT
-                SUM(c.amount)
-              FROM
-                UNNEST(credits) c),
-              0)) OVER (PARTITION BY sku.id, _PARTITIONTIME)) AS sku_cost_with_credits
+        SELECT sku.description AS sku_description, cost
         FROM `{TABLE_WITH_BILLING}`
         WHERE DATE(_PARTITIONTIME) > "{past_two_weeks}" AND DATE(_PARTITIONTIME) < "{three_days_before_yesterday}" AND project.id = "{GCP_PROJECT_ID}"
-    )
-    WHERE (sku_cost > {MINIMUM_COST}) # Filter out values which we know are surely bellow average
-    WINDOW windows_sku_description AS (
-        PARTITION BY sku_description
-    )
-    ORDER BY avg_sku_cost DESC
     """.format(
         three_days_before_yesterday=three_days_before_yesterday,
         past_two_weeks=past_two_weeks,
@@ -73,48 +87,38 @@ def main(_):
         MINIMUM_COST=MINIMUM_COST
     )
 
-    query_past = """
-    SELECT DISTINCT sku_description,
-    VAR_SAMP (sku_cost) OVER (windows_sku_description) AS var_sku_cost,
-    VAR_SAMP (sku_cost_with_credits) OVER (windows_sku_description) AS var_sku_cost_with_credits,
-    AVG (sku_cost) OVER (windows_sku_description) AS avg_sku_cost,
-    AVG (sku_cost_with_credits) OVER (windows_sku_description) AS avg_sku_cost_with_credits,
-    MAX (sku_cost) OVER (windows_sku_description) AS max_sku_cost,
-    MAX (sku_cost_with_credits) OVER (windows_sku_description) AS max_sku_cost_with_credits,
-    MIN (sku_cost) OVER (windows_sku_description) AS min_sku_cost,
-    MIN (sku_cost_with_credits) OVER (windows_sku_description) AS min_sku_cost_with_credits,
-    FROM (
-      SELECT
-        sku.description AS sku_description,
-        (SUM (cost) OVER (PARTITION BY sku.id, _PARTITIONTIME)) AS sku_cost,
-        (SUM (cost) OVER (PARTITION BY sku.id, _PARTITIONTIME) + SUM(IFNULL((
-              SELECT
-                SUM(c.amount)
-              FROM
-                UNNEST(credits) c),
-              0)) OVER (PARTITION BY sku.id, _PARTITIONTIME)) AS sku_cost_with_credits
-        FROM `{TABLE_WITH_BILLING}`
-        WHERE DATE(_PARTITIONTIME) = "{day_before_yesterday}" AND project.id = "{GCP_PROJECT_ID}"
-    )
-    WINDOW windows_sku_description AS (
-        PARTITION BY sku_description
-    )
-    ORDER BY avg_sku_cost DESC
-    """
-    query_day_before_yesterday = query_past.format(
-        day_before_yesterday=day_before_yesterday,
-        GCP_PROJECT_ID=GCP_PROJECT_ID,
-        TABLE_WITH_BILLING=TABLE_WITH_BILLING
-    )
-    query_yesterday = query_past.format(
-        day_before_yesterday=yesterday,
-        GCP_PROJECT_ID=GCP_PROJECT_ID,
-        TABLE_WITH_BILLING=TABLE_WITH_BILLING
-    )
-
     job_config = bigquery.QueryJobConfig()
 
     query_past_data_job = client.query(query_past_data, job_config=job_config)
+
+    pprint(query_past_data_job.result())
+    results = {}
+    for r in query_past_data_job.result():
+        results[r.sku_description] = results.get(r.sku_description, []) + [r.cost]
+    pprint(results)
+    for k in results:
+        print(k)
+        breakout_data = breakout(
+            results[k],
+            min_size=5,  # minimum observations between breakouts
+            method='multi',  # multi or amoc (at most one change)
+            degree=1,  # degree of the penalization polynomial (multi only)
+            beta=0.001,  # penalization term (multi only)
+            percent=None,  # minimum percent change in goodness of fit statistic (multi only)
+            # alpha=2,  # weight of the distance between observations (amoc only)
+            exact=True  # exact or approximate median (amoc only)
+        )
+        pprint(breakout_data)
+        if len(breakout_data):
+            plt.figure(figsize=(10, 5))
+            for i in breakout_data:
+                plt.axvline(x=i, color='b')
+            plt.plot(results[k])
+            # rendering plot
+            plt.show()
+        print("=======================")
+    return ""
+
     query_day_before_yesterday_job = client.query(query_day_before_yesterday, job_config=job_config)
     query_day_yesterday_job = client.query(query_yesterday, job_config=job_config)
 
